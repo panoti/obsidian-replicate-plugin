@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "replicate-plugin",
+	"name": "Replicate Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Yet another unofficial plugin allowing users to synchronize notes between local device and the cloud service.",
+	"author": "panoti",
+	"authorUrl": "https://github.com/panoti",
+	"fundingUrl": "",
 	"isDesktopOnly": false
 }
