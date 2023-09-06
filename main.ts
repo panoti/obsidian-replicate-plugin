@@ -3,10 +3,12 @@ import type { BrowserWindow } from 'electron';
 
 interface ReplicatePluginSettings {
   syncBaseUrl: string;
+  publishBaseUrl: string;
 }
 
 const DEFAULT_SETTINGS: ReplicatePluginSettings = {
   syncBaseUrl: 'https://api.obsidian.md',
+  publishBaseUrl: 'https://publish.obsidian.md',
 };
 
 export default class ReplicatePlugin extends Plugin {
@@ -27,18 +29,22 @@ export default class ReplicatePlugin extends Plugin {
     this.addSettingTab(new ReplicateSettingTab(this.app, this));
 
     try {
-      (<BrowserWindow>/*eslint @typescript-eslint/no-explicit-any: off */
-      (window as any).electronWindow).webContents.session.webRequest.onBeforeRequest(
+      /*eslint @typescript-eslint/no-explicit-any: off */
+      (<BrowserWindow>(window as any).electronWindow).webContents.session.webRequest.onBeforeRequest(
         { urls: ['https://api.obsidian.md/*'] },
         async ({ url }, callback) => {
-          await this.loadSettings();
+          const orgUrl = url;
           // Replace api url with sync api url
           if (url.startsWith('https://api.obsidian.md')) {
             url = url.replace('https://api.obsidian.md', this.settings.syncBaseUrl || DEFAULT_SETTINGS.syncBaseUrl);
           } else if (url.startsWith('https://publish.obsidian.md')) {
-            url = url.replace('https://publish.obsidian.md', this.settings.syncBaseUrl || 'https://publish.obsidian.md');
+            url = url.replace(
+              'https://publish.obsidian.md',
+              this.settings.publishBaseUrl || DEFAULT_SETTINGS.publishBaseUrl
+            );
           }
 
+          console.log('[sync]', orgUrl, url);
           callback({ redirectURL: url });
         }
       );
@@ -46,6 +52,7 @@ export default class ReplicatePlugin extends Plugin {
       new Notice('Failed to intercept requests. The error was: ' + e);
     }
 
+    // overide getHost function
     this.getInternalPluginInstance('sync').getHost = () => {
       let url = this.getHostOrigin();
       const syncBaseUrl = this.settings.syncBaseUrl;
@@ -56,8 +63,7 @@ export default class ReplicatePlugin extends Plugin {
         url = `${scheme}://${syncBaseUrlWithoutScheme}/ws.obsidian.md`;
       }
 
-      console.log('Websocket URL:', url);
-
+      console.log('[sync] Websocket URL:', url);
       return url;
     };
   }
@@ -100,6 +106,7 @@ class ReplicateSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.syncBaseUrl)
           .onChange(async (value) => {
             this.plugin.settings.syncBaseUrl = value;
+            this.plugin.settings.publishBaseUrl = value;
             await this.plugin.saveSettings();
           })
       );
